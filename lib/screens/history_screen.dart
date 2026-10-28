@@ -1,16 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../models/history_entry.dart';
+import '../state/counter_state.dart';
 
 class HistoryScreen extends StatelessWidget {
-  final List<HistoryEntry> history;
-  final VoidCallback onClearHistory;
-
-  const HistoryScreen({
-    super.key,
-    required this.history,
-    required this.onClearHistory,
-  });
+  const HistoryScreen({super.key});
 
   String _formatTime(DateTime time) {
     final hours = time.hour.toString().padLeft(2, '0');
@@ -22,6 +15,9 @@ class HistoryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final state = CounterScope.of(context);
+    final history = state.history;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Історія змін'),
@@ -39,7 +35,7 @@ class HistoryScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  '${history.length}',
+                  '${state.historyCount}',
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                   ),
@@ -68,9 +64,7 @@ class HistoryScreen extends StatelessWidget {
                   margin: const EdgeInsets.only(bottom: 10),
                   child: ListTile(
                     leading: CircleAvatar(
-                      child: Text(
-                        entry.action,
-                      ),
+                      child: Text(entry.action),
                     ),
                     title: Text(
                       '${entry.beforeValue} → ${entry.afterValue}',
@@ -86,7 +80,7 @@ class HistoryScreen extends StatelessWidget {
           ? null
           : FloatingActionButton.extended(
               onPressed: () {
-                onClearHistory();
+                CounterScope.read(context).clearHistory();
 
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(

@@ -1,22 +1,12 @@
 import 'package:flutter/material.dart';
 
-class CounterScreen extends StatefulWidget {
-  final int value;
-  final int historyCount;
-  final void Function(int step) onIncrement;
-  final void Function(int step) onDecrement;
-  final VoidCallback onReset;
-  final VoidCallback onOpenHistory;
+import '../state/counter_state.dart';
+import '../widgets/counter_value.dart';
+import '../widgets/history_badge.dart';
+import 'history_screen.dart';
 
-  const CounterScreen({
-    super.key,
-    required this.value,
-    required this.historyCount,
-    required this.onIncrement,
-    required this.onDecrement,
-    required this.onReset,
-    required this.onOpenHistory,
-  });
+class CounterScreen extends StatefulWidget {
+  const CounterScreen({super.key});
 
   @override
   State<CounterScreen> createState() => _CounterScreenState();
@@ -25,21 +15,41 @@ class CounterScreen extends StatefulWidget {
 class _CounterScreenState extends State<CounterScreen> {
   int _selectedStep = 1;
 
+  void _increment() {
+    CounterScope.read(context).increment(_selectedStep);
+  }
+
   void _decrement() {
-    if (widget.value < _selectedStep) {
+    final success =
+        CounterScope.read(context).decrement(_selectedStep);
+
+    if (!success) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Значення не може бути від’ємним'),
+          content: Text(
+            'Значення не може бути від’ємним',
+          ),
         ),
       );
-      return;
     }
+  }
 
-    widget.onDecrement(_selectedStep);
+  void _reset() {
+    CounterScope.read(context).reset();
+  }
+
+  void _openHistory() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const HistoryScreen(),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('build: CounterScreen');
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Лічильник'),
@@ -48,30 +58,11 @@ class _CounterScreenState extends State<CounterScreen> {
             alignment: Alignment.topRight,
             children: [
               IconButton(
-                onPressed: widget.onOpenHistory,
+                onPressed: _openHistory,
                 icon: const Icon(Icons.history),
                 tooltip: 'Історія',
               ),
-              if (widget.historyCount > 0)
-                Container(
-                  margin: const EdgeInsets.only(
-                    top: 4,
-                    right: 4,
-                  ),
-                  padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(
-                    color: Colors.red,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Text(
-                    '${widget.historyCount}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
+              const HistoryBadge(),
             ],
           ),
         ],
@@ -89,13 +80,7 @@ class _CounterScreenState extends State<CounterScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              Text(
-                '${widget.value}',
-                style: const TextStyle(
-                  fontSize: 64,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              const CounterValue(),
               const SizedBox(height: 32),
               const Text(
                 'Крок зміни',
@@ -134,9 +119,7 @@ class _CounterScreenState extends State<CounterScreen> {
                 alignment: WrapAlignment.center,
                 children: [
                   ElevatedButton(
-                    onPressed: () {
-                      widget.onIncrement(_selectedStep);
-                    },
+                    onPressed: _increment,
                     child: const Text(
                       '+',
                       style: TextStyle(fontSize: 20),
@@ -150,7 +133,7 @@ class _CounterScreenState extends State<CounterScreen> {
                     ),
                   ),
                   OutlinedButton.icon(
-                    onPressed: widget.onReset,
+                    onPressed: _reset,
                     icon: const Icon(Icons.refresh),
                     label: const Text('Скинути'),
                   ),
